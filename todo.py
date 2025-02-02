@@ -47,26 +47,29 @@ class ToDoList:
         
     def add_task(self, description, date = None, priority = "Medium"):
         "Adds a new task to the list."
+        if not description.strip():
+            print("Description cannot be empty.")
+            return
         task = Task(description, date, priority)
         self.tasks.append(task)
         self.save_to_file()
         
-    def edit_task(self, index, new_description = None, new_date = None, new_priority = None):
-        "Edit a task in the list."
-        if 1 <= index <= len(self.tasks):
-            self.tasks[index - 1].edit_task(new_description, new_date, new_priority)
-            self.save_to_file()
-        else:
-            print("Index does not exist.")
-        
-    def show_tasks(self):
+    def show_tasks(self, filter_by = None):
         "Show all the tasks in the list."
-        if not self.tasks:
-            print("You don't have task on the list.")
+        filtered_tasks = self.tasks
+        if filter_by == "completed":
+            filtered_tasks = [t for t in self.tasks if t.completed]
+        elif filter_by == "pending":
+            filtered_tasks = [t for t in self.tasks if not t.completed]
+            
+        sorted_tasks = sorted(filtered_tasks, key= lambda t : (t.priority == "High", t.priority == "Medium", t.date or "9999-12-31"), reverse=True)
+        
+        if not sorted_tasks:
+            print("Not found.")
         else:
-            for i, task in enumerate(self.tasks, 1):
+            for i, task in enumerate(sorted_tasks, 1):
                 print(f"{i}. {task}")
-                
+        
     def mark_completed(self, index):
         "Mark a task as completed."
         if 1 <= index <= len(self.tasks):
@@ -74,7 +77,15 @@ class ToDoList:
             self.save_to_file()
         else:
             print("Index does not exist.")
-            
+        
+    def mark_pending(self, index):
+        "Mark a task as pending."
+        if 1 <= index <= len(self.tasks):
+            self.tasks[index - 1].mark_pending()
+            self.save_to_file()
+        else:
+            print("Index does not exist.")
+        
     def delete_task(self, index):
         "Delete a task from the list."
         if 1 <= index <= len(self.tasks):
@@ -82,6 +93,28 @@ class ToDoList:
             self.save_to_file()
         else:
             print("Index does not exist.")
+            
+    def edit_task(self, index, new_description = None, new_date = None, new_priority = None):
+        "Edit a task in the list."
+        if 1 <= index <= len(self.tasks):
+            task = self.tasks[index - 1]
+            if new_description:
+                task.description = new_description
+            if new_date:
+                task.date = task.validate_date(new_date)
+            if new_priority:
+                task.priority = task.validate_priority(new_priority)
+            self.save_to_file()
+        else:
+            print("Index does not exist.")
+            
+    def search_task(self, query):
+        results = [t for t in self.tasks if query.lower() in t.description.lower()]
+        if results:
+            for i, task in enumerate(results, 1):
+                print(f"{i}. {task}")
+        else:
+            print("No tasks found.")
             
     def save_to_file(self):
         "Save the tasks to a JSON file."
@@ -102,12 +135,8 @@ class ToDoList:
         try:
             with open("data.json", "r") as file:
                 data = json.load(file)
-                self.tasks = [Task(t["description"], t.get("date"), t.get("priority", "Medium")) for t in data]
-                for i, task in enumerate(self.tasks):
-                    if data[i]["completed"]:
-                        task.mark_completed()
-                        
-        except FileNotFoundError:
+                self.tasks = [Task(t["description"], t.get("date"), t.get("priority", "Medium"), t["completed"]) for t in data]
+        except (FileNotFoundError, json.JSONDecodeError):
             pass # If the file does not exist, start with a empty list.
         
         
@@ -115,62 +144,55 @@ def show_menu():
     print("\n===== To-Do List =====")
     print("1. Add task")
     print("2. Show tasks")
-    print("3. Edit task")
-    print("4. Mark task as completed")
-    print("5. Delete task")
-    print("6. Exit")
+    print("3. Show completed tasks")
+    print("4. Show pending tasks")
+    print("5. Mark task as completed")
+    print("6. Mark task as pending")
+    print("7. Edit task")
+    print("8. Delete task")
+    print("9. Search task")
+    print("10. Exit")
     
 def main():
     list = ToDoList()
-    
     while True:
         show_menu()
         option = input("Select an option: ")
         
         if option == "1":
             description = input("Enter the description of the task: ")
-            date = input("Enter the due date (YYYY-MM-DD) or leave blank: ") or None
-            priority = input("Enter the priority (High, Medium, Low) or leave blank: ") or "Medium"
+            date = input("Enter the due date (YYYY-MM-DD, optional): ") or None
+            priority = input("Enter the priority (High, Medium, Low): ") or "Medium"
             list.add_task(description, date, priority)
-            
         elif option == "2":
             list.show_tasks()
-            
         elif option == "3":
-            list.show_tasks()
-            try:
-                index = int(input("Enter the number of the task to edit: "))
-                new_description = input("New description (leave blank to keep): ") or None
-                new_date = input("New due date (YYYY-MM-DD, leave blank to keep): ") or None
-                new_priority = input("New priority (Low, Medium, High, leave blank to keep): ") or None
-                list.edit_task(index, new_description, new_date, new_priority)
-            except ValueError:
-                print("Please enter a valid number.")
-                
+            list.show_tasks("completed")
         elif option == "4":
-            list.show_tasks()
-            try:
-                index = int(input("Enter the task number to mark as completed:"))
-                list.mark_completed(index)
-            except ValueError:
-                print("Please enter a valid number.")
-                
+            list.show_tasks("pending")
         elif option == "5":
-            list.show_tasks()
-            try:
-                index = int(input("Enter the task number to delete: "))
-                list.delete_task(index)
-            except ValueError:
-                print("Please enter a valid number.")
-        
+            index = int(input("Enter task number: "))
+            list.mark_completed(index)
         elif option == "6":
-            print("Saving tasks and exiting...")
-            list.save_to_file()
+            index = int(input("Enter task number: "))
+            list.mark_pending(index)
+        elif option == "7":
+            index = int(input("Enter task number: "))
+            description = input("New description (leave blank to keep the same): ") or None
+            date = input("New due date (YYYY-MM-DD, optional): ") or None
+            priority = input("New priority (High, Medium, Low, optional): ") or None
+            list.edit_task(index, description, date, priority)
+        elif option == "8":
+            index = int(input("Enter task number: "))
+            list.delete_task(index)
+        elif option == "9":
+            query = input("Enter a search query: ")
+            list.search_task(query)
+        elif option == "10":
+            print("Saving tasks and exiting.")
             break
-        
         else:
             print("Invalid Option. Please try again.")
-            
             
 if __name__ == "__main__":
     main()

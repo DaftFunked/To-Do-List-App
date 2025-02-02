@@ -1,26 +1,14 @@
 [
     {
-        "description": "Comprar pan",
+        "description": "Exercising",
         "completed": false,
-        "date": null,
-        "priority": "Alta"
-    },
-    {
-        "description": "Enviar informe de trabajo",
-        "completed": true,
         "date": "2025-02-03",
-        "priority": "High"
+        "priority": "Medium"
     },
     {
-        "description": "Llamar al m\u00c3\u00a9dico",
+        "description": "Doing your homework",
         "completed": false,
-        "date": null,
-        "priority": "Baja"
-    },
-    {
-        "description": "Hacer ejercicio",
-        "completed": true,
-        "date": null,
-        "priority": "Alta"
+        "date": "2025-02-03",
+        "priority": "Low"
     }
 ]
