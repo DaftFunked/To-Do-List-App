@@ -1,7 +1,7 @@
 [
     {
         "description": "Exercising",
-        "completed": false,
+        "completed": true,
         "date": "2025-02-03",
         "priority": "Medium"
     },
@@ -10,5 +10,11 @@
         "completed": false,
         "date": "2025-02-03",
         "priority": "Low"
+    },
+    {
+        "description": "Cooking",
+        "completed": false,
+        "date": "2025-02-01",
+        "priority": "Medium"
     }
 ]
