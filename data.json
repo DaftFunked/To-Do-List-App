@@ -1,20 +1,20 @@
 [
     {
         "description": "Exercising",
-        "completed": true,
         "date": "2025-02-03",
-        "priority": "Medium"
-    },
-    {
-        "description": "Doing your homework",
-        "completed": false,
-        "date": "2025-02-03",
-        "priority": "Low"
+        "priority": "Medium",
+        "completed": true
     },
     {
         "description": "Cooking",
-        "completed": false,
         "date": "2025-02-01",
-        "priority": "Medium"
+        "priority": "Medium",
+        "completed": true
+    },
+    {
+        "description": "Programming",
+        "date": "2025-02-03",
+        "priority": "High",
+        "completed": true
     }
 ]
