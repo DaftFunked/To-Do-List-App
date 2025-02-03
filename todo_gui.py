@@ -9,14 +9,30 @@ BUTTON_COLOR = "#3498DB"
 HIGHLIGHT_COLOR = "#1ABC9C"
 
 class Task:
-    def __init__(self, description, date = None, priority = 3, completed = False):
+    def __init__(self, description, date = None, priority = "Medium", completed = False):
         self.description = description
-        self.date = date
-        self.priority = priority
         self.completed = completed
+        self.date = self.validate_date(date)
+        self.priority = self.validate_priority(priority)
+        
+    def validate_date(self, date_str):
+        if date_str:
+            try:
+                return datetime.strptime(date_str, "%Y-%m-%d").strftime("%Y-%m-%d")
+            except ValueError:
+                print("Invalid date format. Use YYYY-MM-DD.")
+            return None
+        
+    def validate_priority(self, priority):
+        if priority not in ["High", "Medium", "Low"]:
+            return "Medium"
+        return priority
         
     def mark_completed(self):
-        self.completed = not self.completed
+        self.completed = True
+        
+    def mark_pending(self):
+        self.completed = False
         
     def to_dict(self):
         return {
@@ -32,13 +48,12 @@ class ToDoList:
         self.tasks = []
         self.load_from_file()
         
-    def add_task(self, description, date, priority):
-        if not description:
+    def add_task(self, description, date = None, priority = "Medium"):
+        if not description.strip():
             return "Taks description cannot be empty!"
         task = Task(description, date, priority)
         self.tasks.append(task)
         self.save_to_file()
-        return None
     
     def remove_task(self, index):
         if 0 <= index < len(self.tasks):
@@ -48,6 +63,22 @@ class ToDoList:
     def mark_completed(self, index):
         if 0 <= index < len(self.tasks):
             self.tasks[index].mark_completed()
+            self.save_to_file()
+            
+    def mark_pending(self, index):
+        if 0 <= index < len(self.tasks):
+            self.tasks[index].mark_pending()
+            self.save_to_file()
+            
+    def edit_task(self, index, new_description = None, new_date = None, new_priority = None):
+        if 0 <= index < len(self.tasks):
+            task = self.tasks[index]
+            if new_description:
+                task.description = new_description
+            if new_date:
+                task.date = task.validate_date(new_date)
+            if new_priority:
+                task.priority = task.validate_priority(new_priority)
             self.save_to_file()
             
     def save_to_file(self):
@@ -81,8 +112,8 @@ class ToDoApp:
         self.date_entry = tk.Entry(self.root, width=20)
         self.date_entry.grid(row=1, column=1)
 
-        tk.Label(self.root, text="Priority (1-5)", bg=BG_COLOR, fg=TEXT_COLOR).grid(row=2, column=0)
-        self.priority_entry = tk.Entry(self.root, width=5)  # Ahora se define antes de usarse
+        tk.Label(self.root, text="Priority (High, Medium, Low)", bg=BG_COLOR, fg=TEXT_COLOR).grid(row=2, column=0)
+        self.priority_entry = tk.Entry(self.root, width=10)
         self.priority_entry.grid(row=2, column=1)
 
         self.task_list = tk.Listbox(self.root, width=50, height=10, bg=TEXT_COLOR)
@@ -97,20 +128,18 @@ class ToDoApp:
         self.task_list.delete(0, tk.END)
         for i, task in enumerate(self.todo_list.tasks):
             status = "✔" if task.completed else "✘"
-            self.task_list.insert(tk.END, f"{status} {task.description} - Due: {task.date} - Priority: {task.priority}")
+            due = f" (Due: {task.date})" if task.date else ""
+            self.task_list.insert(tk.END, f"{status} {task.description} - {task.priority}{due}")
             
     def add_task(self):
         description = self.task_entry.get()
         date = self.date_entry.get()
         priority = self.priority_entry.get()
-        error = self.todo_list.add_task(description, date, int(priority) if priority.isdigit() else 3)
-        if error:
-            messagebox.showerror("Error", error)
-        else:
-            self.refresh_list()
-            self.task_entry.delete(0, tk.END)
-            self.date_entry.delete(0, tk.END)
-            self.priority_entry.delete(0, tk.END)
+        self.todo_list.add_task(description, date, priority)
+        self.refresh_list()
+        self.task_entry.delete(0, tk.END)
+        self.date_entry.delete(0, tk.END)
+        self.priority_entry.delete(0, tk.END)
             
     def delete_task(self):
         try:
