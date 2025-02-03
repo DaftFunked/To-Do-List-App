@@ -1,12 +1,11 @@
 import tkinter as tk
-from tkinter import messagebox, ttk
+from tkinter import messagebox, simpledialog
 import json
 from datetime import datetime
 
 BG_COLOR = "#2C3E50"
 TEXT_COLOR = "#ECF0F1"
 BUTTON_COLOR = "#3498DB"
-HIGHLIGHT_COLOR = "#1ABC9C"
 
 class Task:
     def __init__(self, description, date=None, priority="Medium", completed=False):
@@ -20,27 +19,17 @@ class Task:
             try:
                 return datetime.strptime(date_str, "%Y-%m-%d").strftime("%Y-%m-%d")
             except ValueError:
-                print("Invalid date format. Use YYYY-MM-DD.")
+                return None
         return None
     
     def validate_priority(self, priority):
-        if priority not in ["High", "Medium", "Low"]:
-            return "Medium"
-        return priority
+        return priority if priority in ["High", "Medium", "Low"] else "Medium"
     
-    def mark_completed(self):
-        self.completed = True
-    
-    def mark_pending(self):
-        self.completed = False
+    def toggle_status(self):
+        self.completed = not self.completed
     
     def to_dict(self):
-        return {
-            "description": self.description,
-            "date": self.date,
-            "priority": self.priority,
-            "completed": self.completed
-        }
+        return {"description": self.description, "date": self.date, "priority": self.priority, "completed": self.completed}
 
 class ToDoList:
     def __init__(self):
@@ -49,9 +38,8 @@ class ToDoList:
     
     def add_task(self, description, date=None, priority="Medium"):
         if not description.strip():
-            return "Task description cannot be empty!"
-        task = Task(description, date, priority)
-        self.tasks.append(task)
+            return
+        self.tasks.append(Task(description, date, priority))
         self.save_to_file()
     
     def remove_task(self, index):
@@ -59,14 +47,9 @@ class ToDoList:
             del self.tasks[index]
             self.save_to_file()
     
-    def mark_completed(self, index):
+    def toggle_task_status(self, index):
         if 0 <= index < len(self.tasks):
-            self.tasks[index].mark_completed()
-            self.save_to_file()
-    
-    def mark_pending(self, index):
-        if 0 <= index < len(self.tasks):
-            self.tasks[index].mark_pending()
+            self.tasks[index].toggle_status()
             self.save_to_file()
     
     def edit_task(self, index, new_description=None, new_date=None, new_priority=None):
@@ -87,8 +70,7 @@ class ToDoList:
     def load_from_file(self):
         try:
             with open("data.json", "r") as file:
-                data = json.load(file)
-                self.tasks = [Task(**t) for t in data]
+                self.tasks = [Task(**t) for t in json.load(file)]
         except (FileNotFoundError, json.JSONDecodeError):
             self.tasks = []
 
@@ -119,8 +101,9 @@ class ToDoApp:
         
         tk.Button(self.root, text="Add Task", command=self.add_task, bg=BUTTON_COLOR, fg=TEXT_COLOR).grid(row=4, column=0)
         tk.Button(self.root, text="Delete Task", command=self.delete_task, bg=BUTTON_COLOR, fg=TEXT_COLOR).grid(row=4, column=1)
-        tk.Button(self.root, text="Complete Task", command=self.complete_task, bg=BUTTON_COLOR, fg=TEXT_COLOR).grid(row=5, column=0)
-        tk.Button(self.root, text="Exit", command=self.root.quit, bg=BUTTON_COLOR, fg=TEXT_COLOR).grid(row=5, column=1)
+        tk.Button(self.root, text="Toggle Status", command=self.toggle_task_status, bg=BUTTON_COLOR, fg=TEXT_COLOR).grid(row=5, column=0)
+        tk.Button(self.root, text="Edit Task", command=self.edit_task, bg=BUTTON_COLOR, fg=TEXT_COLOR).grid(row=5, column=1)
+        tk.Button(self.root, text="Exit", command=self.root.quit, bg=BUTTON_COLOR, fg=TEXT_COLOR).grid(row=6, column=0, columnspan=2)
     
     def refresh_list(self):
         self.task_list.delete(0, tk.END)
@@ -147,11 +130,25 @@ class ToDoApp:
         except IndexError:
             messagebox.showerror("Error", "No task selected!")
     
-    def complete_task(self):
+    def toggle_task_status(self):
         try:
             index = self.task_list.curselection()[0]
-            self.todo_list.mark_completed(index)
+            self.todo_list.toggle_task_status(index)
             self.refresh_list()
+        except IndexError:
+            messagebox.showerror("Error", "No task selected!")
+    
+    def edit_task(self):
+        try:
+            index = self.task_list.curselection()[0]
+            task = self.todo_list.tasks[index]
+            new_description = simpledialog.askstring("Edit Task", "New description:", initialvalue=task.description)
+            new_date = simpledialog.askstring("Edit Task", "New due date (YYYY-MM-DD):", initialvalue=task.date or "")
+            new_priority = simpledialog.askstring("Edit Task", "New priority (High, Medium, Low):", initialvalue=task.priority)
+            
+            if new_description:
+                self.todo_list.edit_task(index, new_description, new_date, new_priority)
+                self.refresh_list()
         except IndexError:
             messagebox.showerror("Error", "No task selected!")
 

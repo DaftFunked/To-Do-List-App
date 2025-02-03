@@ -1,8 +1,8 @@
 [
     {
-        "description": "Exercising",
+        "description": "Working",
         "date": "2025-02-03",
-        "priority": "Medium",
+        "priority": "High",
         "completed": true
     },
     {
@@ -16,5 +16,11 @@
         "date": "2025-02-03",
         "priority": "High",
         "completed": true
+    },
+    {
+        "description": "Eat",
+        "date": "2025-02-03",
+        "priority": "High",
+        "completed": false
     }
 ]
